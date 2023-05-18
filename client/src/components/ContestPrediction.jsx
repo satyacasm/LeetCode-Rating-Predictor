@@ -1,16 +1,37 @@
-import React from 'react';
+import React, { useState } from 'react';
 import '../styles/ContestPrediction.scss';
 
 const ContestPrediction = () => {
-  const rankList = [
+  const initialRankList = [
     { username: 'User1', oldRating: 1500, newRating: 1600, change: 100 },
     { username: 'User2', oldRating: 1800, newRating: 1750, change: -50 },
     { username: 'User3', oldRating: 2000, newRating: 2000, change: 0 },
   ];
 
+  const [rankList, setRankList] = useState(initialRankList);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const handleSearch = (e) => {
+    const query = e.target.value.toLowerCase();
+    setSearchQuery(query);
+    const filteredList = initialRankList.filter(
+      (rank) => rank.username.toLowerCase().includes(query)
+    );
+    setRankList(filteredList);
+  };
+
   return (
     <div className="contest-prediction">
       <h1 className="title">Contest Prediction</h1>
+      <div className="search-container">
+        <input
+          type="text"
+          placeholder="Search by username"
+          value={searchQuery}
+          onChange={handleSearch}
+          className="search-input"
+        />
+      </div>
       <table className="rank-table">
         <thead>
           <tr>
@@ -22,7 +43,7 @@ const ContestPrediction = () => {
         </thead>
         <tbody>
           {rankList.map((rank, index) => (
-            <tr key={index} className="fade-in">
+            <tr key={index}>
               <td>{rank.username}</td>
               <td>{rank.oldRating}</td>
               <td>{rank.newRating}</td>

@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import '../styles/ContestPrediction.scss';
+import axios from 'axios';
 
 const ContestPrediction = () => {
   const initialRankList = [
@@ -20,6 +21,11 @@ const ContestPrediction = () => {
     setRankList(filteredList);
   };
 
+  useEffect(() => {
+    const x = axios.get('http://localhost:3001/getContestData').then((res) => {
+      console.log(res.data);
+    }).catch((err) => {});
+  }, []);
   return (
     <div className="contest-prediction">
       <h1 className="title">Contest Prediction</h1>

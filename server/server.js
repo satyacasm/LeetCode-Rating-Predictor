@@ -37,28 +37,56 @@ app.get("/rating/:id", async (req, res) => {
 });
 
 app.get("/getContestData", async (req, res) => {
+  const totalPages = 300; // Set the total number of pages to fetch
+  const batchSize = 20; // Set the batch size
   const browser = await puppeteer.launch({ headless: "new" });
-  const page = await browser.newPage();
-  await page.goto("https://leetcode.com/contest/weekly-contest-345/ranking/10/");
-  await page.waitForSelector(".table-responsive");
-  let source = await page.evaluate(() => {
-    const rows = Array.from(
-      document.getElementsByTagName("tbody")[0].getElementsByTagName("tr")
-    );
-    return rows.map((row) => {
-      const rank = row.getElementsByTagName("td")[0].textContent;
-      const name = row
-        .getElementsByClassName("ranking-username")[0]
-        .textContent.trim();
-      return { rank, name };
-    });
-  });
-  console.log(source);
+  const data = [];
 
-  // Extract rank and username
-  res.send(source);
-  await browser.close();
+  try {
+    for (let batchStart = 1; batchStart <= totalPages; batchStart += batchSize) {
+      const batchEnd = Math.min(batchStart + batchSize - 1, totalPages);
+      const pagePromises = [];
+
+      for (let pageNumber = batchStart; pageNumber <= batchEnd; pageNumber++) {
+        const page = await browser.newPage();
+        const pagePromise = (async () => {
+          await page.goto(
+            `https://leetcode.com/contest/weekly-contest-345/ranking/${pageNumber}/`
+          );
+          await page.waitForSelector(".table-responsive");
+
+          const source = await page.evaluate(() => {
+            const rows = Array.from(
+              document
+                .getElementsByTagName("tbody")[0]
+                .getElementsByTagName("tr")
+            );
+            return rows.map((row) => {
+              const rank = row.getElementsByTagName("td")[0].textContent;
+              const name = row
+                .getElementsByClassName("ranking-username")[0]
+                .textContent.trim();
+              return { rank, name };
+            });
+          });
+
+          return source;
+        })();
+
+        pagePromises.push(pagePromise);
+      }
+
+      const pageResults = await Promise.all(pagePromises);
+      data.push(...pageResults.flat());
+    }
+  } finally {
+    await browser.close();
+  }
+
+  res.send(data);
 });
+
+
 app.listen(port, () => {
   console.log(`Example app listening at http://localhost:${port}`);
 });

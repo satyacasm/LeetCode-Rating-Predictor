@@ -187,7 +187,7 @@ module.exports.login = async (req, res) => {
     // Sign JWT token and set cookie
     const token = jwt.sign({ id: user._id }, config.get('jwtsecret'), { expiresIn: '1h' });
     res.cookie('jwt', token, { httpOnly: true, maxAge: 3600000 });
-    res.redirect('/admin/dashboard');
+    res.send('Logged in succesfully');
     
   } catch (err) {
     console.error(err.message);
@@ -200,7 +200,7 @@ module.exports.logout = (req, res) => {
   res.clearCookie('jwt');
 //   res.json({ msg: 'Logged out' });
     // req.flash('Logged Out', 'You are successfully logged out')
-  res.redirect('/');
+  res.send('Logged out succesfully');
 }
 
 // Get user controller

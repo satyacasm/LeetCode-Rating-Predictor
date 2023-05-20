@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken');
 const config = require('config');
 const User=require('../models/Admin')
+
 // const adminAuthRoutes = require('./routes/adminAuth');
 module.exports = async function(req, res, next) {
   // Get JWT token from cookie
@@ -8,7 +9,7 @@ module.exports = async function(req, res, next) {
 
   // Check if JWT token exists
   if (!token) {
-    return res.status(401).redirect('/admin/login');
+    return res.status(401).send('Login krle pehle');
   }
 
   try {

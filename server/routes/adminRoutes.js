@@ -5,5 +5,5 @@ const router = Router();
 
 router.get('/rating/:id',adminController.getRating)
 router.get('/getContestData/:id',adminController.getContestRank)
-
+router.get("/getLastPage",adminController.getLastPage);
 module.exports = router;

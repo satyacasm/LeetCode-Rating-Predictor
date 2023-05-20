@@ -102,6 +102,19 @@ module.exports.getContestRank = async (req, res) => {
   };
 
 
+  module.exports.getLastPage = async function fetchLastSecondLi(req,res) {
+    const browser = await puppeteer.launch({ headless: "new" });
+    const page = await browser.newPage();
+    await page.goto(
+      "https://leetcode.com/contest/weekly-contest-345/ranking/1/"
+    );
+    const elements = await page.$$eval(".pagination li", (lis) =>
+      lis.slice(-2, -1).map((li) => li.textContent)
+    );
+    await browser.close();
+
+    res.send(elements[0]);
+};
 
   //Login-Signup module
 

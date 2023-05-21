@@ -6,8 +6,7 @@ const cookieParser = require("cookie-parser")
 router.use(cookieParser());
 
 router.get('/rating/:id',adminController.getRating)
-router.get('/getContestData/:id',adminController.getContestRank)
-router.get("/getLastPage",adminController.getLastPage);
+router.get('/getContestRank',adminController.getContestRank)
 router.post('/register', adminController.signup);
 router.post('/login', adminController.login);
 router.get('/user',auth, adminController.get_user);

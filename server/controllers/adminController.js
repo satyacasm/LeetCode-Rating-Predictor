@@ -1,7 +1,4 @@
 const axios = require("axios");
-const cheerio = require("cheerio");
-const pretty = require("pretty");
-const puppeteer = require('puppeteer');
 const User = require('../models/Admin');
 const jwt = require('jsonwebtoken');
 const config = require('config');
@@ -10,111 +7,75 @@ const fs = require('fs');
 const path=require('path');
 require('dotenv').config();
 
-const url = "https://leetcode.com/username/";
+
+
+async function getUserContestRating(id) {
+  try {
+    
+    const response = await axios.post('https://leetcode.com/graphql', {
+      query: `{
+          userContestRanking(username: "${id}") {
+            attendedContestsCount
+            rating
+          }
+        }`
+    });
+
+    const { attendedContestsCount, rating } = response.data.data.userContestRanking;
+    // console.log(rating)
+    return { attendedContestsCount, rating };
+  } catch (error) {
+    console.error('Error:', error);
+    // Handle error appropriately
+  }
+}
+
+
 
 module.exports.getRating = async (req, res) => {
     try {
-      const url1 = url.replace("username", req.params.id);
-      console.log(url1);
-      const { data } = await axios.get(url1);
-      const $ = cheerio.load(data);
-  
-      const ratings = [];
-      $(".text-label-1.flex.items-center.text-2xl").each((index, element) => {
-        const rating = $(element).text().replace(",", "");
-        ratings.push(parseInt(rating));
-      });
-      console.log(ratings[0]);
-      res.send(`You LeetCode Rating is ${ratings[0]}`);
-      // const $ = cheerio.load(html);
-    } catch (err) {
-      console.log(err);
+      const data =await  getUserContestRating(req.params.id);
+      console.log(data)
+      res.send(data);
+    }
+    catch(err){
+        console.log(err);
+        throw err;
     }
   };
 
-module.exports.getContestRank = async (req, res) => {
-    const getLastPage = async function fetchLastSecondLi() {
-      const browser = await puppeteer.launch({ headless: "new" });
-      const page = await browser.newPage();
-      await page.goto(
-        "https://leetcode.com/contest/weekly-contest-345/ranking/1/"
-      );
-      const elements = await page.$$eval(".pagination li", (lis) =>
-        lis.slice(-2, -1).map((li) => li.textContent)
-      );
-      await browser.close();
-  
-      return elements[0];
-    };
-  
-    const start = parseInt(req.params.id);
-    const totalPages = Math.min(99 + start, await getLastPage()); // Set the total number of pages to fetch
-    // console.log(totalPages);
-    const batchSize = 5; // Set the batch size
-    const browser = await puppeteer.launch({ headless: "new" });
-    const data = [];
+module.exports.getContestRank =  async (req,res)=>{
     try {
-      for (
-        let batchStart = start;
-        batchStart <= totalPages;
-        batchStart += batchSize
-      ) {
-        const batchEnd = Math.min(batchStart + batchSize - 1, totalPages);
-        const pagePromises = [];
+      const pageSize = 25;
   
-        for (let pageNumber = batchStart; pageNumber <= batchEnd; pageNumber++) {
-            console.log(pageNumber)
-          const page = await browser.newPage();
-          const pagePromise = (async () => {
-            await page.goto(
-              `https://leetcode.com/contest/weekly-contest-345/ranking/${pageNumber}/`
-            );
-            await page.waitForSelector(".table-responsive");
+      const firstPageResponse = await axios.get(`https://leetcode.com/contest/api/ranking/weekly-contest-344/?pagination=1&region=global`);
+      const firstPageData = firstPageResponse.data;
   
-            const source = await page.evaluate(() => {
-              const rows = Array.from(
-                document
-                  .getElementsByTagName("tbody")[0]
-                  .getElementsByTagName("tr")
-              );
-              return rows.map((row) => {
-                const rank = row.getElementsByTagName("td")[0].textContent;
-                const name = row
-                  .getElementsByClassName("ranking-username")[0]
-                  .textContent.trim();
-                return { rank, name };
-              });
-            });
+      const totalPages = Math.ceil(firstPageData.user_num / pageSize);
   
-            return source;
-          })();
-          pagePromises.push(pagePromise);
+      const participants = [];
+  
+      for (let currentPage = 1; currentPage <= totalPages; currentPage++) {
+        console.log(currentPage)
+        const pageResponse = await axios.get(`https://leetcode.com/contest/api/ranking/weekly-contest-344/?pagination=${currentPage}&region=global`);
+        const pageData = pageResponse.data;
+  
+        if (pageData && pageData.total_rank && Array.isArray(pageData.total_rank)) {
+          pageData.total_rank.forEach((participant) => {
+            const { username, rank } = participant;
+            participants.push({ username, rank });
+          });
         }
-  
-        const pageResults = await Promise.all(pagePromises);
-        data.push(...pageResults.flat());
       }
-    } finally {
-      await browser.close();
-    }
   
-    res.send(data);
+      res.send(participants);
+    } catch (error) {
+      console.error('Error fetching contest data:', error);
+      throw error;
+    }
   };
 
 
-  module.exports.getLastPage = async function fetchLastSecondLi(req,res) {
-    const browser = await puppeteer.launch({ headless: "new" });
-    const page = await browser.newPage();
-    await page.goto(
-      "https://leetcode.com/contest/weekly-contest-345/ranking/1/"
-    );
-    const elements = await page.$$eval(".pagination li", (lis) =>
-      lis.slice(-2, -1).map((li) => li.textContent)
-    );
-    await browser.close();
-
-    res.send(elements[0]);
-};
 
   //Login-Signup module
 

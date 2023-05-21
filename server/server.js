@@ -11,8 +11,6 @@ app.use(bodyParser.urlencoded({ extended: true }));
 
 const axios = require("axios");
 
-const url = "https://leetcode.com/username/";
-
 const dbURI = process.env.DB_URI;
 const port = process.env.PORT || 3001;
 

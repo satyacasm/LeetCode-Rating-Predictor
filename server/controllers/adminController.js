@@ -47,8 +47,8 @@ module.exports.getRating = async (req, res) => {
 module.exports.getContestRank =  async (req,res)=>{
     try {
       const pageSize = 25;
-  
-      const firstPageResponse = await axios.get(`https://leetcode.com/contest/api/ranking/weekly-contest-344/?pagination=1&region=global`);
+      const contestSlug=req.params.slug;
+      const firstPageResponse = await axios.get(`https://leetcode.com/contest/api/ranking/${contestSlug}/?pagination=1&region=global`);
       const firstPageData = firstPageResponse.data;
   
       const totalPages = Math.ceil(firstPageData.user_num / pageSize);
@@ -57,7 +57,7 @@ module.exports.getContestRank =  async (req,res)=>{
   
       for (let currentPage = 1; currentPage <= totalPages; currentPage++) {
         console.log(currentPage)
-        const pageResponse = await axios.get(`https://leetcode.com/contest/api/ranking/weekly-contest-344/?pagination=${currentPage}&region=global`);
+        const pageResponse = await axios.get(`https://leetcode.com/contest/api/ranking/${contestSlug}/?pagination=${currentPage}&region=global`);
         const pageData = pageResponse.data;
   
         if (pageData && pageData.total_rank && Array.isArray(pageData.total_rank)) {

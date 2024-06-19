@@ -5,6 +5,9 @@ const config = require('config');
 const bcrypt = require('bcrypt');
 const fs = require('fs');
 const path=require('path');
+const puppeteer = require('puppeteer');
+const ContestRankings = require("../models/contestRankings");
+const LCUser = require("../models/User");
 require('dotenv').config();
 
 
@@ -26,6 +29,7 @@ async function getUserContestRating(id) {
     return { attendedContestsCount, rating };
   } catch (error) {
     console.error('Error:', error);
+    return error;
     // Handle error appropriately
   }
 }
@@ -44,39 +48,136 @@ module.exports.getRating = async (req, res) => {
     }
   };
 
+
+
+// const participants = [];
 module.exports.getContestRank =  async (req,res)=>{
-    try {
-      const pageSize = 25;
-      const contestSlug=req.params.slug;
-      const firstPageResponse = await axios.get(`https://leetcode.com/contest/api/ranking/${contestSlug}/?pagination=1&region=global`);
-      const firstPageData = firstPageResponse.data;
-  
-      const totalPages = Math.ceil(firstPageData.user_num / pageSize);
-  
+  let firstPageResponse;
       const participants = [];
+      const pageSize = 25;
+      const contestSlug=req.body.slug;
+      firstPageResponse = await fetchContestRankings(contestSlug,1)
+      // firstPageResponse = await axios.get(`https://leetcode.com/contest/api/ranking/weekly-contest-344/?pagination=2&region=global`);
+      // // weekly-contest-345
+      const firstPageData = firstPageResponse;
   
-      for (let currentPage = 1; currentPage <= totalPages; currentPage++) {
-        console.log(currentPage)
-        const pageResponse = await axios.get(`https://leetcode.com/contest/api/ranking/${contestSlug}/?pagination=${currentPage}&region=global`);
-        const pageData = pageResponse.data;
-  
-        if (pageData && pageData.total_rank && Array.isArray(pageData.total_rank)) {
-          pageData.total_rank.forEach((participant) => {
-            const { username, rank } = participant;
-            participants.push({ username, rank });
-          });
-        }
+      let totalPages = Math.ceil(firstPageData.user_num / pageSize);
+      // totalPages =3;
+      let ranks = firstPageData.total_rank;
+      let contestID;
+      if(firstPageData && firstPageData.total_rank){
+        contestID = ''+firstPageData.total_rank[0].contest_id;
       }
-  
-      res.send(participants);
-    } catch (error) {
-      console.error('Error fetching contest data:', error);
-      throw error;
-    }
+      // console.log(firstPageData.total_rank[0])
+      console.log(totalPages+" "+contestID)
+      try{
+        for (let currentPage = 1; currentPage <= totalPages; currentPage++) {
+          console.log(currentPage)
+          const pageResponse = await fetchContestRankings(contestSlug,currentPage);
+          const pageData = pageResponse;
+          // console.log(pageData.total_rank)
+          if (pageData && pageData.total_rank) {
+            pageData.total_rank.forEach((participant) => {
+              // console.log(participant)
+              const { username, rank } = participant;
+              participants.push({ username, rank });
+            });
+          }
+        }
+        console.log(participants);
+        await postContestRankings(contestSlug,participants);
+        res.send(participants);
+      }
+      catch(err){
+        res.send('Error fetching Ranks');
+        console.log(err);
+      }
+      
+      // res.send(firstPageResponse)
   };
 
 
+  async function fetchContestRankings(contestSlug, currentPage) {
+    const browser = await puppeteer.launch();
+    const page = await browser.newPage();
+    
+    // Set the User-Agent header
+    await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3');
+  
+    // Go to the contest rankings page
+    const url = `https://leetcode.com/contest/api/ranking/${contestSlug}/?pagination=${currentPage}&region=global`;
+    await page.goto(url);
+  
+     // Extract the JSON data from the <pre> tag
+    const jsonData = await page.evaluate(() => {
+      const preElement = document.querySelector('pre');
+      if (preElement) {
+        return JSON.parse(preElement.textContent);
+      }
+      return null;
+    });
 
+    await browser.close();
+    return jsonData;
+  }
+  async function getContestID(contestSlug){
+      const firstPageResponse = await fetchContestRankings(contestSlug,1)
+      // firstPageResponse = await axios.get(`https://leetcode.com/contest/api/ranking/weekly-contest-344/?pagination=2&region=global`);
+      // // weekly-contest-345
+      const firstPageData = firstPageResponse;
+      let ranks = firstPageData.total_rank;
+      let contestID;
+      if(firstPageData && firstPageData.total_rank){
+        contestID = ''+firstPageData.total_rank[0].contest_id;
+      }
+      return contestID;
+  }
+module.exports.getAllContest = async (req,res)=>{
+  try{
+    const response = await axios.get(`https://leetcode.com/_next/data/lYmU2J-PXaqwL3Mv1FM8J/contest.json`);
+    res.send(response.data.pageProps.dehydratedState.queries[1].state.data.pastContests.data)
+  }
+  catch(err){
+    console.log(err)
+    throw(err)
+  }
+}
+async function postContestRankings(contestSlug, data) {
+  const contestID = await getContestID(contestSlug);
+  try {
+    // Log the start of the operation
+    console.log(`Starting to update contest rankings for contestID: ${contestID}`);
+
+    const bulkOps = data.map(({ username, rank }) => ({
+      updateOne: {
+        filter: { contestID, username },
+        update: { $set: { contestID, username, ranking: rank } },
+        upsert: true,
+      },
+    }));
+
+    // Log the number of bulk operations to be performed
+    console.log(`Preparing to perform ${bulkOps.length} bulk operations`);
+
+    const result = await ContestRankings.bulkWrite(bulkOps);
+
+    // Log the result of the bulkWrite operation
+    console.log(`Bulk write operation completed. Result:`);
+    console.log(`Matched: ${result.matchedCount}, Modified: ${result.modifiedCount}, Upserted: ${result.upsertedCount}`);
+
+  } catch (err) {
+    // Log the error
+    console.error("Error updating contest rankings:", err);
+    throw {
+      message: "Error fetching ranks",
+      error: err,
+    };
+  }
+}
+
+
+
+/*************************************************************************************************************************************/
   //Login-Signup module
 
   module.exports.signup = (req,res) => {

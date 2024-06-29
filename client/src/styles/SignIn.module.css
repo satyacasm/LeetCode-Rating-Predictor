@@ -1,0 +1,62 @@
+@import url('https://fonts.googleapis.com/css2?family=Playwrite+ES:wght@100..400&display=swap');
+
+.body {
+  background-image: url(./bg-image.webp);
+  font-family: "Playwrite ES", cursive;
+  font-optical-sizing: auto; 
+  font-style: normal;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  margin: 0;
+}
+
+.login {
+  width: 50%;
+  margin: auto;
+  text-align: center;
+  border-radius: 15px;
+  box-shadow: 0 4px 8px 0 rgba(255, 255, 255, 0.8), 0 6px 20px 0 rgba(255, 255, 255, 0.8);
+  padding: 20px;
+  color: white;
+  opacity: 1;
+}
+
+.login form {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.login label, .login input {
+  text-align: left;
+  width: 80%;
+  margin: 10px 0;
+}
+
+.login input {
+  border:2px solid white;
+  border-radius: 5px;
+  height: 30px;
+  color: white;
+}
+
+.welcome {
+  font-size: 40px;
+}
+
+button {
+  border:2px solid white;
+  border-radius: 15px;
+  color: white;
+  font-size: large;
+  width: 200px;
+  height: 36px;
+  margin-top: 10px;
+  font-family: inherit;
+}
+
+button:hover{
+  cursor: pointer;
+}

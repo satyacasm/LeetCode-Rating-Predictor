@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import '../styles/ContestPrediction.scss';
 import axios from 'axios';
+import NavBar from './NavBar';
 
 const ContestPrediction = () => {
   const initialRankList = [
@@ -27,7 +28,9 @@ const ContestPrediction = () => {
     }).catch((err) => {});
   }, []);
   return (
+    
     <div className="contest-prediction">
+      <NavBar></NavBar>
       <h1 className="title">Contest Prediction</h1>
       <div className="search-container">
         <input

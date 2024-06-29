@@ -12,8 +12,8 @@ router.post('/predictRating',lcUserController.predictRating)
 router.get('/getContestRank',adminController.getContestRank)
 router.get('/getAllContests',adminController.getAllContest)
 router.post('/register', adminController.signup);
-router.post('/login', adminController.login);
+router.post('/login', adminController.login); 
 router.get('/user',auth, adminController.get_user);
-router.post('/logout',auth,adminController.logout);
+router.post('/logout',auth,adminController.logout); 
 
 module.exports = router;

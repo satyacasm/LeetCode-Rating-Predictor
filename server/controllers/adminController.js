@@ -203,7 +203,7 @@ async function postContestRankings(contestSlug, data) {
                         jwt.sign(
                             { id: user._id },
                             config.get('jwtsecret'),
-                            { expiresIn: 3600 },
+                            { expiresIn: 10 },
                             (err, token) => {
                                 if(err) throw err;
                                 res.json({
@@ -247,9 +247,13 @@ module.exports.login = async (req, res) => {
     }
 
     // Sign JWT token and set cookie
-    const token = jwt.sign({ id: user._id }, config.get('jwtsecret'), { expiresIn: '1h' });
-    res.cookie('jwt', token, { httpOnly: true, maxAge: 3600000 });
-    res.send('Logged in succesfully');
+    const token = jwt.sign({ id: user._id }, config.get('jwtsecret'), { expiresIn: '1000s' });
+    res.cookie('jwt', token, { httpOnly: true, maxAge: 1000000 });
+
+    res.send({
+      token,
+      user
+    });
     
   } catch (err) {
     console.error(err.message);
